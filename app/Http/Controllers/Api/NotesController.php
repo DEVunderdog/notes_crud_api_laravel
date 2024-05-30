@@ -8,10 +8,11 @@ use Illuminate\Http\Request;
 
 class NotesController extends Controller
 {
-    public function createNote(Request $request){
+    public function createNote(Request $request)
+    {
         $request->validate([
-            "title"=>"required|string",
-            "description"=>"required|string"
+            "title" => "required|string",
+            "description" => "required|string"
         ]);
 
         $note = auth()->user()->notes()->create($request->all());
@@ -23,7 +24,8 @@ class NotesController extends Controller
         ]);
     }
 
-    public function getNotes(){
+    public function getNotes()
+    {
         $notes = auth()->user()->notes;
 
         return response()->json([
@@ -33,10 +35,11 @@ class NotesController extends Controller
         ]);
     }
 
-    public function getNotesWithID($id){
+    public function getNotesWithID($id)
+    {
         $note = auth()->user()->notes()->find($id);
 
-        if (!$note){
+        if (!$note) {
             return response()->json([
                 "status" => false,
                 "message" => "Not not found"
@@ -50,7 +53,8 @@ class NotesController extends Controller
         ]);
     }
 
-    public function updateNote(Request $request, $id){
+    public function updateNote(Request $request, $id)
+    {
         $request->validate([
             "title" => "required|string",
             "description" => "required|string"
@@ -58,27 +62,27 @@ class NotesController extends Controller
 
         $note = auth()->user()->notes()->find($id);
 
-        if(!$note) {
-            return response() -> json([
+        if (!$note) {
+            return response()->json([
                 "status" => false,
                 "message" => "Note not found",
             ], 404);
         }
 
-        $note -> update($request->all());
+        $note->update($request->all());
 
         return response()->json([
             "status" => true,
             "message" => "Note updated successfully",
             "data" => $note
         ]);
-
     }
 
-    public function deleteNote($id){
+    public function deleteNote($id)
+    {
         $note = auth()->user()->notes()->find($id);
 
-        if(!$note){
+        if (!$note) {
             return response()->json([
                 "status" => false,
                 "message" => "Note not found",
