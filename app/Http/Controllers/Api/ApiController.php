@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Jobs\EmailJob;
 use Illuminate\Http\Request;
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
@@ -22,6 +23,8 @@ class ApiController extends Controller
             "email" => $request->email,
             "password" => bcrypt($request->password)
         ]);
+
+        EmailJob::dispatch($request->email);
 
         return response()->json([
             "status" => true,
