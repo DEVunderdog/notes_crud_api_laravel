@@ -6,10 +6,18 @@ use App\Http\Controllers\Controller;
 use App\Jobs\EmailJob;
 use Illuminate\Http\Request;
 use App\Models\User;
+use App\Services\UserService;
 use Illuminate\Support\Facades\Hash;
 
 class ApiController extends Controller
 {
+    protected $userService;
+
+    public function __construct(UserService $userService)
+    {
+        $this->userService = $userService;
+    }
+
     public function register(Request $request)
     {
         $request->validate([
@@ -18,18 +26,18 @@ class ApiController extends Controller
             "password" => "required|confirmed"
         ]);
 
-        User::create([
-            "name" => $request->name,
-            "email" => $request->email,
-            "password" => bcrypt($request->password)
-        ]);
+        $user = $this->userService->create(
+            $request->input('name'),
+            $request->input('email'),
+            $request->input('password')
+        );
 
         EmailJob::dispatch($request->email);
 
         return response()->json([
             "status" => true,
             "message" => "user registered successfully",
-            "data" => []
+            "data" => $user
         ]);
     }
 
@@ -40,53 +48,34 @@ class ApiController extends Controller
             "password" => "required"
         ]);
 
-        $user = User::where("email", $request->email)->first();
+        $response = $this->userService->login(
+            $request->input('email'),
+            $request->input('password')
+        );
 
-        if (!empty($user)) {
-            if (Hash::check($request->password, $user->password)) {
-                $token = $user->createToken("mytoken")->accessToken;
-                return response()->json([
-                    "status" => true,
-                    "message" => "Login Successful",
-                    "token" => $token,
-                    "data" => [],
-                ]);
-            } else {
-                return response()->json([
-                    "status" => false,
-                    "message" => "incorrect password",
-                    "data" => []
-                ]);
-            }
-        } else {
-            return response()->json([
-                "status" => false,
-                "message" => "Invalid email value",
-                "data" => []
-            ]);
-        }
+        return response()->json($response);
+        
     }
 
     public function profile()
     {
         $userData = auth() -> user();
-        return response()->json([
-            "status" => true,
-            "message" => "Profile Information",
-            "data" => $userData,
-            "id" => auth()->user()->id
-        ]);
+        $response = $this->userService->profile(
+            $userData,
+            $userData->id
+        );
+
+        return response()->json($response);
     }
 
     public function logout()
     {
         $token = auth()->user()->token();
 
-        $token->revoke();
+        $response = $this->userService->logout(
+            $token
+        );
 
-        return response()->json([
-            "status" => true,
-            "token_data"=>"User logged out successfully"
-        ]);
+        return response()->json($response);
     }
 }
