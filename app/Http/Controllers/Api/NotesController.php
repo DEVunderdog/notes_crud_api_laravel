@@ -24,9 +24,29 @@ class NotesController extends Controller
         ]);
     }
 
-    public function getNotes()
+    public function getNotes(Request $request)
     {
-        $notes = auth()->user()->notes;
+        $limit = $request->query('limit', 10);
+        $offset = $request->query('offset', 0);
+        $notes = auth()->user()->notes()
+            ->skip($offset)
+            ->take($limit)
+            ->get();
+
+        /*
+            $limit = $request->query('limit', 10);
+
+            $notes = auth()->user()->notes()->paginate($limit);
+
+            return response()->json([
+                "status" => true,
+                "message" => "Notes fetched successfully",
+                "data" => $notes->items(),
+                "links" => $notes->links(),
+                "meta" => $notes->meta(),
+            ]);
+
+        */
 
         return response()->json([
             "status" => true,
