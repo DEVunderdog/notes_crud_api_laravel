@@ -3,11 +3,18 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Models\Note;
+use App\Services\NoteService;
 use Illuminate\Http\Request;
 
 class NotesController extends Controller
 {
+    protected $noteService;
+
+    public function __construct(NoteService $noteService)
+    {
+        $this->noteService = $noteService;
+    }
+
     public function createNote(Request $request)
     {
         $request->validate([
@@ -15,7 +22,11 @@ class NotesController extends Controller
             "description" => "required|string"
         ]);
 
-        $note = auth()->user()->notes()->create($request->all());
+        $note = $this->noteService->create(
+            auth()->id(),
+            $request->input('title'),
+            $request->input('description')
+        );
 
         return response()->json([
             "status" => true,
@@ -28,36 +39,27 @@ class NotesController extends Controller
     {
         $limit = $request->query('limit', 10);
         $offset = $request->query('offset', 0);
-        $notes = auth()->user()->notes()
-            ->skip($offset)
-            ->take($limit)
-            ->get();
-
-        /*
-            $limit = $request->query('limit', 10);
-
-            $notes = auth()->user()->notes()->paginate($limit);
-
-            return response()->json([
-                "status" => true,
-                "message" => "Notes fetched successfully",
-                "data" => $notes->items(),
-                "links" => $notes->links(),
-                "meta" => $notes->meta(),
-            ]);
-
-        */
+        
+        $notes = $this->noteService->getAll(
+            auth()->id(),
+            $limit,
+            $offset
+        );
 
         return response()->json([
             "status" => true,
-            "message" => "Notes fetched successfully",
+            "message" => "Fetched all Notes",
             "data" => $notes
         ]);
+
     }
 
     public function getNotesWithID($id)
     {
-        $note = auth()->user()->notes()->find($id);
+        $note = $this->noteService->getOne(
+            auth()->id(),
+            $id
+        );
 
         if (!$note) {
             return response()->json([
@@ -80,7 +82,12 @@ class NotesController extends Controller
             "description" => "required|string"
         ]);
 
-        $note = auth()->user()->notes()->find($id);
+        $note = $this->noteService->update(
+            auth()->id(),
+            $id,
+            $request->input('title'),
+            $request->input('description')
+        );
 
         if (!$note) {
             return response()->json([
@@ -88,8 +95,6 @@ class NotesController extends Controller
                 "message" => "Note not found",
             ], 404);
         }
-
-        $note->update($request->all());
 
         return response()->json([
             "status" => true,
@@ -100,7 +105,10 @@ class NotesController extends Controller
 
     public function deleteNote($id)
     {
-        $note = auth()->user()->notes()->find($id);
+        $note = $this->noteService->delete(
+            auth()->id(),
+            $id
+        );
 
         if (!$note) {
             return response()->json([
@@ -108,8 +116,6 @@ class NotesController extends Controller
                 "message" => "Note not found",
             ], 404);
         }
-
-        $note->delete();
 
         return response()->json([
             "status" => true,
